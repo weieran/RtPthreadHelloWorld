@@ -16,20 +16,24 @@
 namespace
 {
 
-	const size_t MAX_NBR_OF_THREADS = 5;
+	const size_t MAX_NBR_OF_THREADS = 3;
 
 	struct ThreadData
 	{
 		size_t threadId;
-		size_t prio;
+		sched_param schedPara;
 		__useconds_t sleepTime_us;
 		std::string message;
 	};
+
+
+
 
 	pthread_mutex_t countMutex;
 	pthread_cond_t countThreshold_cv;
 	const auto COUNT_LIMIT = 10;
 	size_t count;
+	const auto MY_PROCESS_PID = 0;
 
 	void countAndSignal ()
 	{
@@ -48,31 +52,35 @@ namespace
 
 void* mainThread1(void *threadArg)
 {
-	auto data = static_cast<ThreadData*>(threadArg);
+    auto data = static_cast<ThreadData*>(threadArg);
 
-  while(1)
-  {
-	  pthread_mutex_lock (&countMutex);
-	  pthread_cond_wait(&countThreshold_cv, &countMutex);
-	  count = 0;
-	  pthread_mutex_unlock (&countMutex);
-	  printf("Thread PID: #%d!is alive\n", data->threadId);
-	  printf("Count is reset now\n");
+    sched_setscheduler(MY_PROCESS_PID, SCHED_FIFO, &data[0].schedPara);
 
-  }
+    while(1)
+    {
+      pthread_mutex_lock (&countMutex);
+      pthread_cond_wait(&countThreshold_cv, &countMutex);
+      count = 0;
+      pthread_mutex_unlock (&countMutex);
+      printf("Thread PID: #%d!is alive\n", data->threadId);
+      printf("Count is reset now\n");
+
+    }
 
 };
 
 void* mainThread2(void *threadArg)
 {
-	auto data = static_cast<ThreadData*>(threadArg);
+    auto data = static_cast<ThreadData*>(threadArg);
 
-  while(1)
-  {
-	  printf("Thread PID: #%d!is alive\n", data->threadId);
-	  countAndSignal();
-	  usleep(data->sleepTime_us);
-  }
+    sched_setscheduler(MY_PROCESS_PID, SCHED_FIFO, &data[0].schedPara);
+
+    while(1)
+    {
+      printf("Thread PID: #%d!is alive\n", data->threadId);
+      countAndSignal();
+      usleep(data->sleepTime_us);
+    }
 
 };
 
@@ -81,23 +89,24 @@ int main(int argc,char** argv)
 {
    std::array<pthread_t, MAX_NBR_OF_THREADS> threads;
 
-   const ThreadData data = { 1, 50, 1000000, "first thread"};
    std::array<ThreadData, MAX_NBR_OF_THREADS> threadData = {{
 		   //Id,Prio, Sleep_us, MessageString
-                   { 1, 50, 1000000, "first thread"},
-		   { 2, 50, 2000000,"second thread"},
-		   { 3, 50, 3000000,"third thread"},
-		   { 4, 50, 4000000,"fourth thread"},
-		   { 5, 50, 5000000,"fifth thread"}
+                   { 0, {49}, 1000000, "first thread"},
+		   { 1, {59}, 2000000,"second thread"},
+		   { 2, {69}, 3000000,"third thread"},
    }};
 
+   // set the process sheduling policy
+
+   sched_setscheduler(MY_PROCESS_PID, SCHED_FIFO, &threadData[0].schedPara);
 
    pthread_mutex_init(&countMutex, nullptr);
    pthread_cond_init(&countThreshold_cv, nullptr);
 
-   pthread_create(&threads[0], nullptr, mainThread1, &threadData[0]);
-   pthread_create(&threads[1], nullptr, mainThread2, &threadData[1]);
+   pthread_create(&threads[1], nullptr, mainThread1, &threadData[1]);
+   pthread_create(&threads[2], nullptr, mainThread2, &threadData[2]);
 
+   sched_setscheduler(MY_PROCESS_PID, SCHED_FIFO, &threadData[0].schedPara);
 
    while(1){
 
