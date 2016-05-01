@@ -22,7 +22,7 @@ void* mainThread1(void *threadId)
 
   while(1)
   {
-	  printf("Thread PID: #%d!\n is alive", (uint32_t)threadId);
+	  printf("Thread PID: #%d!is alive\n", (uint32_t)threadId);
 	  usleep(sleeepTime_us);
   }
 
@@ -34,7 +34,7 @@ void* mainThread2(void *threadId)
 
   while(1)
   {
-	  printf("Thread PID: #%d!\n is alive", (uint32_t)threadId);
+	  printf("Thread PID: #%d! is alive\n", (uint32_t)threadId);
 	  usleep(sleeepTime_us);
   }
 
@@ -54,7 +54,7 @@ int main(int argc,char** argv)
 
    while(1){
 
-	  printf("Main Thread alive");
+	  printf("Main Thread alive \n");
 	  sleep(3);//3 Sek
 
    }
