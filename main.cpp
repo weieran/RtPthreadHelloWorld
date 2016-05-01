@@ -35,6 +35,7 @@ namespace
 	{
 	  pthread_mutex_lock (&countMutex);
 	  count++;
+	  printf("Count set to %d \n",count);
 	  if (count >= COUNT_LIMIT)
 	  {
 	    pthread_cond_signal (&countThreshold_cv);
@@ -53,11 +54,11 @@ void* mainThread1(void *threadArg)
   {
 	  pthread_mutex_lock (&countMutex);
 	  pthread_cond_wait(&countThreshold_cv, &countMutex);
+	  count = 0;
 	  pthread_mutex_unlock (&countMutex);
-
 	  printf("Thread PID: #%d!is alive\n", data->threadId);
+	  printf("Count is reset now\n");
 
-	  countAndSignal();
   }
 
 };
@@ -69,6 +70,7 @@ void* mainThread2(void *threadArg)
   while(1)
   {
 	  printf("Thread PID: #%d!is alive\n", data->threadId);
+	  countAndSignal();
 	  usleep(data->sleepTime_us);
   }
 
@@ -94,12 +96,12 @@ int main(int argc,char** argv)
    pthread_cond_init(&countThreshold_cv, nullptr);
 
    pthread_create(&threads[0], nullptr, mainThread1, &threadData[0]);
-   pthread_create(&threads[1], nullptr, mainThread1, &threadData[1]);
+   pthread_create(&threads[1], nullptr, mainThread2, &threadData[1]);
 
 
    while(1){
 
-	  printf("Main Thread alive \n");
+	  printf("Thread PID: #0 alive \n");
 	  countAndSignal();
 	  sleep(3);//3 Sek
 
