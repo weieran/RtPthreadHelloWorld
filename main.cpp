@@ -8,79 +8,56 @@
  *  https://rt.wiki.kernel.org/index.php/Squarewave-example
  *  */
 
-#include <stdlib.h>
 #include <stdio.h>
-#include <time.h>
-#include <sched.h>
-#include <sys/io.h>
+#include <pthread.h>
+#include <unistd.h>
+#include <array>
 
-#define PORT 0x378
-#define NSEC_PER_SEC    1000000000
+const size_t NBR_OF_THREADS = 5;
 
-/* using clock_nanosleep of librt */
-extern int clock_nanosleep(clockid_t __clock_id, int __flags,
-      __const struct timespec *__req,
-      struct timespec *__rem);
 
-/* the struct timespec consists of nanoseconds
- * and seconds. if the nanoseconds are getting
- * bigger than 1000000000 (= 1 second) the
- * variable containing seconds has to be
- * incremented and the nanoseconds decremented
- * by 1000000000.
- */
-static inline void tsnorm(struct timespec *ts)
+void* mainThread1(void *threadId)
 {
-   while (ts->tv_nsec >= NSEC_PER_SEC) {
-      ts->tv_nsec -= NSEC_PER_SEC;
-      ts->tv_sec++;
-   }
-}
+	__useconds_t sleeepTime_us = 1 * 1000000;//1sek
 
-/* increment counter and write to parallelport */
-void out()
+  while(1)
+  {
+	  printf("Thread PID: #%d!\n is alive", (uint32_t)threadId);
+	  usleep(sleeepTime_us);
+  }
+
+};
+
+void* mainThread2(void *threadId)
 {
-   static unsigned char state=0;
-   outb(state++,PORT);
-}
+	__useconds_t sleeepTime_us = 2 * 1000000;// 2sek
+
+  while(1)
+  {
+	  printf("Thread PID: #%d!\n is alive", (uint32_t)threadId);
+	  usleep(sleeepTime_us);
+  }
+
+};
+
+
+
 
 int main(int argc,char** argv)
 {
-   struct timespec t;
-   struct sched_param param;
-   /* default interval = 50000ns = 50us
-    * cycle duration = 100us
-    */
-   int interval=50000;
+   std::array<pthread_t, NBR_OF_THREADS> threads;
 
-   /* set permissions of parallelport */
-   ioperm(PORT,1,1);
 
-   if(argc>=2 && atoi(argv[1])>0)
-   {
-      printf("using realtime, priority: %d\n",atoi(argv[1]));
-      param.sched_priority = atoi(argv[1]);
-      /* enable realtime fifo scheduling */
-      if(sched_setscheduler(0, SCHED_FIFO, &param)==-1){
-         perror("sched_setscheduler failed");
-         exit(-1);
-      }
-   }
-   if(argc>=3)
-      interval=atoi(argv[2]);
+   pthread_create(&threads[0], nullptr, mainThread1, (void*)0);
+   pthread_create(&threads[1], nullptr, mainThread1, (void*)1);
 
-   /* get current time */
-   clock_gettime(0,&t);
-   /* start after one second */
-   t.tv_sec++;
+
    while(1){
-      /* wait untill next shot */
-      clock_nanosleep(0, TIMER_ABSTIME, &t, NULL);
-      /* do the stuff */
-      out();
-      /* calculate next shot */
-      t.tv_nsec+=interval;
-      tsnorm(&t);
+
+	  printf("Main Thread alive");
+	  sleep(3);//3 Sek
+
    }
+   pthread_exit(nullptr);
    return 0;
 }
