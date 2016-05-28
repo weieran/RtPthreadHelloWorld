@@ -91,9 +91,9 @@ int main(int argc,char** argv)
 
    std::array<ThreadData, MAX_NBR_OF_THREADS> threadData = {{
 		   //Id,Prio, Sleep_us, MessageString
-                   { 0, {49}, 1000000, "first thread"},
-		   { 1, {59}, 2000000,"second thread"},
-		   { 2, {69}, 3000000,"third thread"},
+                   { 0, {49}, 100, "first thread"},
+		   { 1, {59}, 200,"second thread"},
+		   { 2, {69}, 300,"third thread"},
    }};
 
    // set the process sheduling policy
