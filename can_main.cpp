@@ -3,52 +3,80 @@
  *
  *  Created on: May 28, 2016
  *      Author: weieran
+ *
+ * Data copied from: https://en.wikipedia.org/wiki/SocketCAN
  */
 
+#include "can_main.h"
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+
+#include <net/if.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
-#include <net/if.h>
 
 #include <linux/can.h>
 #include <linux/can/raw.h>
-#include <string.h>
 
-/* At time of writing, these constants are not defined in the headers */
-#ifndef PF_CAN
-#define PF_CAN 29
-#endif
+namespace
+{
 
-#ifndef AF_CAN
-#define AF_CAN PF_CAN
-#endif
+struct can_frame frame;
+int can_socket;
 
-/* ... */
+void write_can_data()
+{
+  int nbytes;
 
-/* Somewhere in your app */
 
-   /* Create the socket */
-   int skt = socket( PF_CAN, SOCK_RAW, CAN_RAW );
+  frame.can_id  = 0x123;
+  frame.can_dlc = 2;
+  frame.data[0] = 0x11;
+  frame.data[1] = 0x22;
 
-   /* Locate the interface you wish to use */
-   struct ifreq ifr;
-   strcpy(ifr.ifr_name, "can0");
-   ioctl(skt, SIOCGIFINDEX, &ifr); /* ifr.ifr_ifindex gets filled
-                                  * with that device's index */
+  nbytes = write(can_socket, &frame, sizeof(struct can_frame));
 
-   /* Select that CAN interface, and bind the socket to it. */
-   struct sockaddr_can addr;
-   addr.can_family = AF_CAN;
-   addr.can_ifindex = ifr.ifr_ifindex;
-   bind( skt, (struct sockaddr*)&addr, sizeof(addr) );
+  printf("Wrote %d bytes\n", nbytes);
+}
 
-   /* Send a message to the CAN bus */
-   struct can_frame frame;
-   frame.can_id = 0x123;
-   strcpy( frame.data, "foo" );
-   frame.can_dlc = strlen( frame.data );
-   int bytes_sent = write( skt, &frame, sizeof(frame) );
+}
 
-   /* Read a message back from the CAN bus */
-   int bytes_read = read( skt, &frame, sizeof(frame) );
+int init_can()
+{
+    struct sockaddr_can addr;
+
+    struct ifreq ifr;
+
+    char ifname[] = "vcan0";
+
+    if((can_socket = socket(PF_CAN, SOCK_RAW, CAN_RAW)) < 0) {
+	    perror("Error while opening socket");
+	    return -1;
+    }
+
+    strcpy(ifr.ifr_name, ifname);
+    ioctl(can_socket, SIOCGIFINDEX, &ifr);
+
+    addr.can_family  = AF_CAN;
+    addr.can_ifindex = ifr.ifr_ifindex;
+
+    printf("%s at index %d\n", ifname, ifr.ifr_ifindex);
+
+    if(bind(can_socket, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+	    perror("Error in socket bind");
+	    return -2;
+    }
+    return 0;
+}
+
+void can_main()
+{
+
+  write_can_data();
+
+}
+
