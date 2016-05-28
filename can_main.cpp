@@ -1,10 +1,18 @@
-/*
+/**
  * can_main.cpp
  *
  *  Created on: May 28, 2016
  *      Author: weieran
  *
  * Data copied from: https://en.wikipedia.org/wiki/SocketCAN
+ *
+ * To be used can driver needs to be loaded from linux:
+ * $ modprobe can
+ * $ modprobe can_raw
+ * $ modprobe vcan
+ * $ sudo ip link add dev vcan0 type vcan
+ * $ sudo ip link set up vcan0
+ * $ ip link show vcan0
  */
 
 #include "can_main.h"
